@@ -29,15 +29,13 @@ const settings = [
 function main() {
   logseq.useSettingsSchema(settings);
 
-  logseq.Editor.registerSlashCommand("Insert Agg Renderer", async () => {
+  logseq.Editor.registerSlashCommand("Insert Journal Summary", async () => {
     await logseq.Editor.insertAtEditingCursor("{{renderer journal-summary}}");
   });
 
   logseq.App.onMacroRendererSlotted(async ({ slot, payload }) => {
     const [type] = payload.arguments;
     const uuid = payload.uuid;
-
-    console.log(slot, payload);
 
     if (type === "journal-summary") {
       const block = await logseq.Editor.getBlock(uuid);
@@ -104,13 +102,13 @@ function main() {
               </tbody>
             </table>
             `,
-          key: "journal-summary",
+          key: `journal-summary-${slot}`,
           slot: slot,
           reset: true,
         });
       } catch (e) {
         logseq.provideUI({
-          key: "journal-summary",
+          key: `journal-summary-${slot}`,
           template: `<div data-slot-id="${slot}" data-block-uuid="${uuid}">${e}</div>`,
           slot: slot,
           reset: true,
