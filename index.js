@@ -91,10 +91,14 @@ function main() {
           .join("");
 
         rows += `
-          <tr>
-            <td>Total</td>
-            <td>${agg.map((a) => a[1]).reduce((acc, a) => acc + a)}</td>
-          </tr>
+          <tfoot>
+            <tr>
+              <td><b>Total</b></td>
+              <td><b>${agg
+                .map((a) => a[1])
+                .reduce((acc, a) => acc + a)}</b></td>
+            </tr>
+          </tfoot>
         `;
 
         logseq.provideUI({
