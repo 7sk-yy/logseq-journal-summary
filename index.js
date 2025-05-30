@@ -78,7 +78,9 @@ function main() {
           }, {})
         );
 
-        const rows = agg
+        agg.sort((a, b) => (a[0] > b[0] ? 1 : -1));
+
+        let rows = agg
           .map(
             (r) => `
               <tr>
@@ -87,6 +89,13 @@ function main() {
               </tr>`
           )
           .join("");
+
+        rows += `
+          <tr>
+            <td>Total</td>
+            <td>${agg.map((a) => a[1]).reduce((acc, a) => acc + a)}</td>
+          </tr>
+        `;
 
         logseq.provideUI({
           template: `
