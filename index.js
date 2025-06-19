@@ -17,14 +17,12 @@ const settings = [
     type: "number",
     default: 1,
   },
-  {
-    key: "regexp",
-    title: "Regexp",
-    description: "need group 'start', 'end', 'tag'",
-    type: "string",
-    default: "`(?<start>\\d{2}:\\d{2}) - (?<end>\\d{2}:\\d{2})` (?<tag>#\\S+)",
-  },
 ];
+
+function tagMatch(name) {
+  const m = name.match(/^\d{3}$/);
+  return m ? m[0] : undefined;
+}
 
 function main() {
   logseq.useSettingsSchema(settings);
@@ -54,28 +52,51 @@ function main() {
           children = children.map((child) => child.children).flat();
         }
 
-        const contents = children.map((child) => {
-          const groups = child.content.match(logseq.settings.regexp).groups;
+        const contents = await Promise.all(
+          children.map(async (child) => {
+            const times = child.content.match(
+              /(?<start>\d{2}:\d{2})\s*-\s*(?<end>\d{2}:\d{2})/
+            );
+            if (!times) {
+              return undefined;
+            }
 
-          const start = groups.start.split(":");
-          const end = groups.end.split(":");
+            const start = times.groups.start.split(":");
+            const end = times.groups.end.split(":");
 
-          const elapsed =
-            parseInt(end[0]) * 60 +
-            parseInt(end[1]) -
-            (parseInt(start[0]) * 60 + parseInt(start[1]));
+            const elapsed =
+              parseInt(end[0]) * 60 +
+              parseInt(end[1]) -
+              (parseInt(start[0]) * 60 + parseInt(start[1]));
 
-          return {
-            ...groups,
-            elapsed: elapsed / 60,
-          };
-        });
+            let tag = undefined;
+            let refTag = undefined;
+            for (let i = 0; i < child.pathRefs.length; i++) {
+              const ref = await logseq.Editor.getPage(child.pathRefs[i].id);
+              tag = tag || tagMatch(ref.name);
+
+              if (ref.properties) {
+                ref.properties.tags.forEach((t) => {
+                  refTag = refTag || tagMatch(t);
+                });
+              }
+            }
+            tag = tag || refTag;
+
+            return {
+              tag,
+              elapsed: elapsed / 60,
+            };
+          })
+        );
 
         const agg = Object.entries(
-          contents.reduce((acc, { tag, elapsed }) => {
-            acc[tag] = (acc[tag] || 0) + elapsed;
-            return acc;
-          }, {})
+          contents
+            .filter((c) => c !== undefined)
+            .reduce((acc, { tag, elapsed }) => {
+              acc[tag] = (acc[tag] || 0) + elapsed;
+              return acc;
+            }, {})
         );
 
         agg.sort((a, b) => (a[0] > b[0] ? 1 : -1));
