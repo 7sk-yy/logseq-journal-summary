@@ -31,6 +31,14 @@ function main() {
     await logseq.Editor.insertAtEditingCursor("{{renderer journal-summary}}");
   });
 
+  logseq.provideModel({
+    jumpTag(e) {
+      logseq.App.pushState("page", {
+        name: e.dataset.ref,
+      });
+    },
+  });
+
   logseq.App.onMacroRendererSlotted(async ({ slot, payload }) => {
     const [type] = payload.arguments;
     const uuid = payload.uuid;
@@ -105,7 +113,7 @@ function main() {
           .map(
             (r) => `
               <tr>
-                <td><a data-ref="${r[0]}" class="tag">${r[0]}</a></td>
+                <td><a data-on-click="jumpTag" data-ref="${r[0]}" class="tag">${r[0]}</a></td>
                 <td>${r[1]}</td>
               </tr>`
           )
